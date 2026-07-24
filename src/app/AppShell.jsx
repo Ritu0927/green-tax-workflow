@@ -7,16 +7,13 @@ import { ClientHomePage } from "../pages/ClientHomePage";
 import { CpaDashboardPage } from "../pages/CpaDashboardPage";
 import { ReturnWorkspacePage } from "../pages/ReturnWorkspacePage";
 import { DocumentsPage } from "../pages/DocumentsPage";
-import { CollaborationPage } from "../pages/CollaborationPage";
 import { AdminSettingsPage } from "../pages/AdminSettingsPage";
 
 const pageMap = {
-  "/": CpaDashboardPage,
-  "/client-home": ClientHomePage,
-  "/cpa-dashboard": CpaDashboardPage,
+  "/client-workspace": ClientHomePage,
+  "/dashboard": CpaDashboardPage,
   "/return-workspace": ReturnWorkspacePage,
   "/documents": DocumentsPage,
-  "/collaboration": CollaborationPage,
   "/admin-settings": AdminSettingsPage
 };
 

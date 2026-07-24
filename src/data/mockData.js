@@ -95,11 +95,11 @@ const messages = [
 ];
 
 const aiInsights = [
-  { id: "ai-001", returnId: "ret-2026-001", recommendation: "Hold interest income line until missing 1099-INT is uploaded.", evidence: "Prior-year bank account ending 2184 and current account activity indicate interest was earned.", sourceDocument: "First Harbor Bank 1099-INT", confidence: 0.82, rationale: "Source account exists in current-year statements but the document is not yet present.", reviewStatus: "Awaiting Review" },
-  { id: "ai-002", returnId: "ret-2026-002", recommendation: "Investigate officer compensation variance against payroll ledger.", evidence: "W-2 wage total differs from trial balance payroll by $8,420.", sourceDocument: "Officer Payroll Summary", confidence: 0.91, rationale: "Difference exceeds configured review threshold for officer compensation.", reviewStatus: "Open" },
-  { id: "ai-003", returnId: "ret-2026-003", recommendation: "Verify charitable contribution receipt before final approval.", evidence: "Receipt image is present, but contribution acknowledgment language is partial.", sourceDocument: "Foundation Donation Receipt", confidence: 0.68, rationale: "Document appears complete visually but extracted acknowledgment sentence is truncated.", reviewStatus: "Needs Reviewer Decision" },
-  { id: "ai-004", returnId: "ret-2026-009", recommendation: "Review HSA contribution amount against W-2 box 12 code W.", evidence: "Contribution total appears $600 above expected limit after employer contribution match.", sourceDocument: "Pineworks Labs W-2", confidence: 0.77, rationale: "AI matched prior-year carryover and current payroll records but needs human confirmation.", reviewStatus: "Awaiting Review" },
-  { id: "ai-005", returnId: "ret-2026-010", recommendation: "Escalate shareholder basis support for reviewer confirmation.", evidence: "K-1 basis attachment and year-end equity rollforward disagree by $12,300.", sourceDocument: "Shareholder Basis Support", confidence: 0.89, rationale: "The discrepancy is material enough to block final approval.", reviewStatus: "Escalate" }
+  { id: "ai-001", returnId: "ret-2026-001", fieldId: "field-001", type: "missing_document", title: "Final 1099-INT may be missing", recommendation: "Hold interest income line until missing 1099-INT is uploaded.", evidence: "Prior-year bank account ending 2184 and current account activity indicate interest was earned.", sourceDocument: "First Harbor Bank 1099-INT", sourceDocumentId: "doc-001", relatedReturnSection: "Income", confidence: 0.82, rationale: "Source account exists in current-year statements but the document is not yet present.", reviewStatus: "Human review required", status: "awaiting_review", severity: "medium", recommendedAction: "Request final 1099-INT", actionType: "hold-for-document", actionable: true, origin: "seeded" },
+  { id: "ai-002", returnId: "ret-2026-002", fieldId: "field-004", type: "value_mismatch", title: "Officer compensation variance detected", recommendation: "Investigate officer compensation variance against payroll ledger.", evidence: "W-2 wage total differs from trial balance payroll by $8,420.", sourceDocument: "Officer Payroll Summary", sourceDocumentId: "doc-003", relatedReturnSection: "Payroll", confidence: 0.91, rationale: "Difference exceeds the mock review threshold for officer compensation.", reviewStatus: "Open", status: "awaiting_review", severity: "medium", recommendedAction: "Review payroll mapping", actionType: "review-required", actionable: false, origin: "seeded" },
+  { id: "ai-003", returnId: "ret-2026-003", fieldId: "field-011", type: "low_confidence", title: "Contribution support needs verification", recommendation: "Verify charitable contribution receipt before final approval.", evidence: "Receipt image is present, but contribution acknowledgment language is partial.", sourceDocument: "Foundation Donation Receipt", sourceDocumentId: "doc-005", relatedReturnSection: "Schedule A", confidence: 0.68, rationale: "Document appears complete visually but extracted acknowledgment sentence is truncated.", reviewStatus: "Needs Reviewer Decision", status: "awaiting_review", severity: "medium", recommendedAction: "Verify field against source document", actionType: "needs-review", actionable: false, origin: "seeded" },
+  { id: "ai-004", returnId: "ret-2026-009", fieldId: "field-021", type: "value_mismatch", title: "HSA contribution may be overstated", recommendation: "Review HSA contribution amount against W-2 box 12 code W.", evidence: "Contribution total appears $600 above expected limit after employer contribution match.", sourceDocument: "Pineworks Labs W-2", sourceDocumentId: "doc-008", relatedReturnSection: "Benefits", confidence: 0.77, rationale: "AI matched prior-year carryover and current payroll records but needs human confirmation.", reviewStatus: "Human review required", status: "awaiting_review", severity: "medium", recommendedAction: "Review the return value", actionType: "review-required", actionable: false, origin: "seeded" },
+  { id: "ai-005", returnId: "ret-2026-010", fieldId: "field-024", type: "value_mismatch", title: "Basis support should be escalated", recommendation: "Escalate shareholder basis support for reviewer confirmation.", evidence: "K-1 basis attachment and year-end equity rollforward disagree by $12,300.", sourceDocument: "Shareholder Basis Support", sourceDocumentId: "doc-009", relatedReturnSection: "Shareholders", confidence: 0.89, rationale: "The discrepancy is material enough to block final approval.", reviewStatus: "Escalate", status: "awaiting_review", severity: "high", recommendedAction: "Escalate for reviewer confirmation", actionType: "escalate", actionable: false, origin: "seeded" }
 ];
 
 const reviewNotes = [
@@ -233,6 +233,123 @@ const questionnaires = {
   ]
 };
 
+export function normalizeWorkflowStatus(status) {
+  switch (status) {
+    case "Open":
+    case "Not started":
+    case "Not Started":
+      return "Not Started";
+    case "In Progress":
+    case "In progress":
+      return "In Progress";
+    case "Awaiting Review":
+    case "Needs Reviewer Decision":
+    case "Review":
+    case "Needs attention":
+      return "Needs Review";
+    case "Blocked":
+    case "Waiting on Client":
+    case "Requested":
+      return "Waiting";
+    case "Complete":
+    case "Completed":
+    case "Verified":
+      return "Completed";
+    default:
+      return status;
+  }
+}
+
+function inferSectionFromLink(linkedTo, clientId, documentsCollection, returnsCollection) {
+  const linkedDocument = documentsCollection.find((document) => document.id === linkedTo);
+  if (linkedDocument) {
+    return linkedDocument.relatedSection;
+  }
+
+  const linkedReturn = returnsCollection.find((item) => item.id === linkedTo) ?? returnsCollection.find((item) => item.clientId === clientId);
+  return linkedReturn?.sections?.[0] ?? "Return overview";
+}
+
+export function buildWorkflowItemsFromData({
+  clients: clientsCollection,
+  returns: returnsCollection,
+  documents: documentsCollection,
+  documentRequests: documentRequestsCollection,
+  tasks: tasksCollection,
+  messages: messagesCollection,
+  clientActivity: clientActivityCollection,
+  questionnaires: questionnairesCollection
+}) {
+  const requestByDocumentId = new Map(
+    documentRequestsCollection
+      .filter((request) => request.linkedDocumentId)
+      .map((request) => [request.linkedDocumentId, request])
+  );
+
+  const taskItems = tasksCollection.map((task) => {
+    const relatedRequest = requestByDocumentId.get(task.linkedTo);
+    const baseDocument = documentsCollection.find((document) => document.id === task.linkedTo);
+    const relatedMessages = messagesCollection.filter((message) => message.clientId === task.clientId && message.linkedTo === task.linkedTo);
+    const relatedActivity = (clientActivityCollection[task.clientId] ?? []).filter((item) =>
+      item.title.toLowerCase().includes(task.title.toLowerCase().split(" ")[0].toLowerCase())
+    );
+
+    return {
+      id: `wf-${task.id}`,
+      clientId: task.clientId,
+      type: relatedRequest ? "document-request" : task.type.toLowerCase().replace(/\s+/g, "-"),
+      title: relatedRequest?.title ?? task.title,
+      description:
+        relatedRequest
+          ? `Provide the requested document so the firm can continue work in ${baseDocument?.relatedSection ?? "the return"}.`
+          : `${task.type} connected to ${inferSectionFromLink(task.linkedTo, task.clientId, documentsCollection, returnsCollection)}.`,
+      owner: task.owner,
+      dueDate: relatedRequest?.dueDate ?? task.dueDate,
+      status: normalizeWorkflowStatus(task.status),
+      relatedDocumentId: relatedRequest?.linkedDocumentId ?? baseDocument?.id ?? null,
+      relatedReturnSection: baseDocument?.relatedSection ?? inferSectionFromLink(task.linkedTo, task.clientId, documentsCollection, returnsCollection),
+      visibility: task.visibility,
+      relatedEntityId: task.linkedTo,
+      actionLabel: relatedRequest ? "Upload document" : task.visibility === "Client" ? "Continue" : "Open details",
+      messages: relatedMessages.map((message) => message.id),
+      activity: relatedActivity.map((item) => item.id)
+    };
+  });
+
+  const questionnaireItems = Object.entries(questionnairesCollection).flatMap(([clientId, items]) =>
+    items.map((item) => ({
+      id: `wf-${item.id}`,
+      clientId,
+      type: "questionnaire",
+      title: item.label,
+      description: "Continue this intake section to keep the return moving.",
+      owner: clientsCollection.find((client) => client.id === clientId)?.name ?? "Client",
+      dueDate: clientsCollection.find((client) => client.id === clientId)?.deadline ?? null,
+      status: normalizeWorkflowStatus(item.status),
+      relatedDocumentId: null,
+      relatedReturnSection: item.label,
+      visibility: "Client",
+      relatedEntityId: item.id,
+      actionLabel: item.status === "Completed" ? null : "Continue",
+      messages: [],
+      activity: []
+    }))
+  );
+
+  return [...taskItems, ...questionnaireItems];
+}
+
+const workflowItems = buildWorkflowItemsFromData({
+  clients,
+  returns,
+  documents,
+  documentRequests,
+  tasks,
+  messages,
+  clientActivity,
+  questionnaires
+});
+
 export const mockData = {
   teamMembers,
   clients,
@@ -250,5 +367,6 @@ export const mockData = {
   permissionGroups,
   securitySettings,
   clientActivity,
-  questionnaires
+  questionnaires,
+  workflowItems
 };

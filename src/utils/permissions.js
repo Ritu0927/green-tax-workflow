@@ -1,149 +1,172 @@
-const routeMatrix = {
-  client: {
-    "client-home": "full",
-    "cpa-dashboard": "hidden",
-    "return-workspace": "limited",
-    documents: "limited",
-    collaboration: "limited",
-    "admin-settings": "hidden"
+export const permissionsByRole = {
+  client: [
+    "viewOwnWorkspace",
+    "viewOwnDocuments",
+    "completeClientSurvey",
+    "uploadDocuments",
+    "viewOwnReturnStatus",
+    "viewClientMessages"
+  ],
+  preparer: [
+    "viewFirmDashboard",
+    "viewAssignedReturns",
+    "viewDocuments",
+    "editReturnValues",
+    "respondToAiInsights",
+    "addInternalNotes",
+    "viewAuditHistory",
+    "viewClientWorkspacePreview"
+  ],
+  reviewer: [
+    "viewFirmDashboard",
+    "viewAssignedReturns",
+    "viewDocuments",
+    "reviewDocuments",
+    "respondToAiInsights",
+    "addInternalNotes",
+    "approveReturns",
+    "lockVerifiedFields",
+    "viewAuditHistory",
+    "viewClientWorkspacePreview"
+  ],
+  admin: [
+    "manageUsers",
+    "manageRoles",
+    "viewSecuritySettings",
+    "viewFirmAccessActivity",
+    "reassignReturns",
+    "viewAuditHistory"
+  ]
+};
+
+export const navigationItems = [
+  {
+    to: "/client-workspace",
+    label: "Client Workspace",
+    key: "client-workspace",
+    requiredAnyPermissions: ["viewOwnWorkspace"]
   },
-  preparer: {
-    "client-home": "limited",
-    "cpa-dashboard": "full",
-    "return-workspace": "full",
-    documents: "full",
-    collaboration: "full",
-    "admin-settings": "limited"
+  {
+    to: "/dashboard",
+    label: "CPA Dashboard",
+    key: "dashboard",
+    requiredAnyPermissions: ["viewFirmDashboard"]
   },
-  reviewer: {
-    "client-home": "limited",
-    "cpa-dashboard": "full",
-    "return-workspace": "full",
-    documents: "full",
-    collaboration: "full",
-    "admin-settings": "limited"
+  {
+    to: "/return-workspace",
+    label: "Return Workspace",
+    key: "return-workspace",
+    requiredAnyPermissions: ["viewAssignedReturns", "reviewDocuments"]
   },
-  admin: {
-    "client-home": "limited",
-    "cpa-dashboard": "full",
-    "return-workspace": "full",
-    documents: "full",
-    collaboration: "full",
-    "admin-settings": "full"
+  {
+    to: "/documents",
+    label: "Documents",
+    key: "documents",
+    requiredAnyPermissions: ["viewOwnDocuments", "viewDocuments"]
+  },
+  {
+    to: "/admin-settings",
+    label: "Admin and Role Settings",
+    key: "admin-settings",
+    requiredAnyPermissions: ["manageUsers", "manageRoles", "viewSecuritySettings", "viewFirmAccessActivity"]
   }
+];
+
+export const routePermissions = {
+  "/client-workspace": ["viewOwnWorkspace", "viewClientWorkspacePreview"],
+  "/dashboard": ["viewFirmDashboard"],
+  "/return-workspace": ["viewAssignedReturns", "reviewDocuments"],
+  "/documents": ["viewOwnDocuments", "viewDocuments"],
+  "/admin-settings": ["manageUsers", "manageRoles", "viewSecuritySettings", "viewFirmAccessActivity"]
 };
 
 const roleConfig = {
   client: {
     label: "Client",
-    accent: "var(--accent-teal)",
     pageTitles: {
-      "/": "CPA Dashboard",
-      "/client-home": "Client Home",
-      "/cpa-dashboard": "CPA Dashboard",
-      "/return-workspace": "Return Workspace",
-      "/documents": "Documents",
-      "/collaboration": "Collaboration and Tasks",
-      "/admin-settings": "Admin and Role Settings"
+      "/client-workspace": "Client Workspace",
+      "/documents": "Documents"
     },
     pageDescriptions: {
-      "/": "Clients are redirected to the calm onboarding surface from the main navigation.",
-      "/client-home": "Clear next steps, status visibility, and secure communication for first-time tax clients.",
-      "/cpa-dashboard": "This route stays visible in the prototype but is hidden from client navigation.",
-      "/return-workspace": "Clients can review only the portions of the return relevant to their outstanding actions.",
-      "/documents": "Secure document upload, verification visibility, and missing-item tracking.",
-      "/collaboration": "Client messages and open requests stay separate from internal firm notes.",
-      "/admin-settings": "Administrative controls are restricted by role."
+      "/client-workspace": "Unified return progress, intake tasks, client-visible communication, and recent activity for your return.",
+      "/documents": "Secure document upload, verification visibility, and missing-item tracking for your return."
     }
   },
   preparer: {
     label: "Preparer",
-    accent: "var(--accent-blue)",
     pageTitles: {
-      "/": "CPA Dashboard",
-      "/client-home": "Client Home",
-      "/cpa-dashboard": "CPA Dashboard",
+      "/dashboard": "CPA Dashboard",
+      "/client-workspace": "Client Workspace",
       "/return-workspace": "Return Workspace",
-      "/documents": "Documents",
-      "/collaboration": "Collaboration and Tasks",
-      "/admin-settings": "Admin and Role Settings"
+      "/documents": "Documents"
     },
     pageDescriptions: {
-      "/": "Action-oriented operational view for active returns, missing items, and upcoming deadlines.",
-      "/client-home": "Preview of the client-facing onboarding surface from the firm perspective.",
-      "/cpa-dashboard": "Priority queue, return statuses, and workload signals organized around next actions.",
-      "/return-workspace": "Primary review surface linking tax values, documents, AI guidance, and approval controls.",
-      "/documents": "Document intake, verification state, secure access indicators, and return-section mapping.",
-      "/collaboration": "Contextual messages, internal notes, requests, and assigned work connected to returns.",
-      "/admin-settings": "Read-only preview of security and role controls unless elevated to admin."
+      "/dashboard": "Action-oriented operational view for assigned returns, missing items, and approaching deadlines.",
+      "/client-workspace": "Preview of the client-facing workspace where intake, action items, and communication stay connected.",
+      "/return-workspace": "Primary preparation surface linking tax values, source documents, AI-assisted review, and correction controls.",
+      "/documents": "Document intake, verification state, secure access indicators, and return-section mapping."
     }
   },
   reviewer: {
     label: "Reviewer",
-    accent: "var(--accent-gold)",
     pageTitles: {
-      "/": "CPA Dashboard",
-      "/client-home": "Client Home",
-      "/cpa-dashboard": "CPA Dashboard",
+      "/dashboard": "CPA Dashboard",
+      "/client-workspace": "Client Workspace",
       "/return-workspace": "Return Workspace",
-      "/documents": "Documents",
-      "/collaboration": "Collaboration and Tasks",
-      "/admin-settings": "Admin and Role Settings"
+      "/documents": "Documents"
     },
     pageDescriptions: {
-      "/": "Review-focused queue emphasizing evidence quality, AI uncertainty, and change requests.",
-      "/client-home": "Reviewers can inspect the client experience without editing client-owned content.",
-      "/cpa-dashboard": "Prioritized review workload with owner and deadline context.",
+      "/dashboard": "Review-focused queue emphasizing evidence quality, escalations, and returns ready for signoff.",
+      "/client-workspace": "Reviewers can inspect the client-facing workflow without changing client-visible tasks directly.",
       "/return-workspace": "Evidence-driven review surface with approval, escalation, and audit visibility.",
-      "/documents": "Document verification and source traceability support final review.",
-      "/collaboration": "Reviewers can request changes and keep internal notes separate from client messages.",
-      "/admin-settings": "Security settings remain limited without admin privileges."
+      "/documents": "Document verification and source traceability support final review."
     }
   },
   admin: {
-    label: "Admin",
-    accent: "var(--accent-slate)",
+    label: "Administrator",
     pageTitles: {
-      "/": "CPA Dashboard",
-      "/client-home": "Client Home",
-      "/cpa-dashboard": "CPA Dashboard",
-      "/return-workspace": "Return Workspace",
-      "/documents": "Documents",
-      "/collaboration": "Collaboration and Tasks",
       "/admin-settings": "Admin and Role Settings"
     },
     pageDescriptions: {
-      "/": "Operational view with full access to staffing, security settings, and audit oversight.",
-      "/client-home": "Admins can preview the client experience while preserving least-privilege access patterns.",
-      "/cpa-dashboard": "Team capacity and high-risk returns stay visible alongside operational priorities.",
-      "/return-workspace": "Admins can audit approval history and field locking without acting as preparers.",
-      "/documents": "Document access is logged and verified labels indicate controlled handling.",
-      "/collaboration": "Message separation and ownership remain visible across the firm.",
-      "/admin-settings": "Role, permission, and access activity controls for the prototype."
+      "/admin-settings": "User, role, security, and access-activity controls for the prototype."
     }
   }
 };
 
-export function getRouteAccess(role, routeKey) {
-  return routeMatrix[role]?.[routeKey] ?? "hidden";
+export function hasPermissionForRole(role, permission) {
+  return permissionsByRole[role]?.includes(permission) ?? false;
+}
+
+export function hasAnyPermissionForRole(role, permissions) {
+  return permissions.some((permission) => hasPermissionForRole(role, permission));
+}
+
+export function getDefaultRouteForRole(role) {
+  switch (role) {
+    case "client":
+      return "/client-workspace";
+    case "admin":
+      return "/admin-settings";
+    case "preparer":
+    case "reviewer":
+    default:
+      return "/dashboard";
+  }
+}
+
+export function canAccessRoute(role, path) {
+  const requiredPermissions = routePermissions[path];
+  if (!requiredPermissions) {
+    return false;
+  }
+
+  return hasAnyPermissionForRole(role, requiredPermissions);
+}
+
+export function getNavigationForRole(role) {
+  return navigationItems.filter((item) => hasAnyPermissionForRole(role, item.requiredAnyPermissions));
 }
 
 export function getRoleConfig(role) {
   return roleConfig[role] ?? roleConfig.preparer;
-}
-
-export function canEditField(role) {
-  return role === "preparer" || role === "reviewer";
-}
-
-export function canApproveReturn(role) {
-  return role === "reviewer" || role === "admin";
-}
-
-export function canManageSecurity(role) {
-  return role === "admin";
-}
-
-export function canViewInternalNotes(role) {
-  return role !== "client";
 }

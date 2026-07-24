@@ -16,8 +16,12 @@ const toneByStatus = {
   "In Progress": "info",
   Blocked: "danger",
   "Awaiting Review": "review",
+  "Human review required": "review",
   "Needs Reviewer Decision": "review",
   Escalate: "danger",
+  Escalated: "danger",
+  Accepted: "success",
+  "On hold": "warning",
   Complete: "success",
   "In progress": "info",
   "Needs attention": "warning"

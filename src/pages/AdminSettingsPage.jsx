@@ -2,11 +2,10 @@ import React from "react";
 import { useAppContext } from "../app/appContext";
 import { SecurityBadge } from "../components/SecurityBadge";
 import { StatusChip } from "../components/StatusChip";
-import { canManageSecurity } from "../utils/permissions";
 
 export function AdminSettingsPage() {
-  const { mockData, activeRole } = useAppContext();
-  const fullAccess = canManageSecurity(activeRole);
+  const { mockData, hasPermission } = useAppContext();
+  const fullAccess = hasPermission("manageUsers");
 
   return (
     <div className="page-grid">

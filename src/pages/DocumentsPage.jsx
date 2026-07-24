@@ -4,10 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../app/appContext";
 import { SecurityBadge } from "../components/SecurityBadge";
 import { StatusChip } from "../components/StatusChip";
-import { formatDateLabel } from "../utils/formatters";
+import { formatConfidence, formatDateLabel } from "../utils/formatters";
 
 export function DocumentsPage() {
-  const { activeClient, activeReturn, activeRole, mockData, setActiveClientId, setActiveReturnId } = useAppContext();
+  const {
+    activeClient,
+    activeReturn,
+    mockData,
+    setActiveClientId,
+    setActiveReturnId,
+    documentAnalyses,
+    analysisStatusByDocumentId,
+    runDocumentAnalysis,
+    hasPermission
+  } = useAppContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -26,7 +36,14 @@ export function DocumentsPage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState(documents[0]?.id ?? null);
   const selectedDocument = documents.find((item) => item.id === selectedDocumentId) ?? documents[0];
 
-  const linkedTasks = mockData.tasks.filter((task) => task.linkedTo === selectedDocument?.id);
+  const linkedTasks = mockData.tasks.filter(
+    (task) => task.linkedTo === selectedDocument?.id && (hasPermission("viewDocuments") ? true : task.visibility === "Client")
+  );
+  const analysis = selectedDocument ? documentAnalyses[selectedDocument.id] : null;
+  const analysisStatus = selectedDocument ? analysisStatusByDocumentId[selectedDocument.id] : null;
+  const isAnalyzing = analysisStatus === "analyzing";
+  const canRunAnalysis = hasPermission("respondToAiInsights") || hasPermission("reviewDocuments");
+  const canOpenReturnWorkspace = hasPermission("viewAssignedReturns") || hasPermission("reviewDocuments");
 
   return (
     <div className="page-grid">
@@ -36,7 +53,7 @@ export function DocumentsPage() {
             <h3>Secure Documents</h3>
             <p className="muted">Documents carry verification state, source-field count, secure access indicators, and links back to the return workspace.</p>
           </div>
-          <SecurityBadge label={activeRole === "client" ? "Client view masked" : "Firm view"} tone="neutral" />
+          <SecurityBadge label={hasPermission("viewDocuments") ? "Firm view" : "Client view masked"} tone="neutral" />
         </div>
 
         <div className="controls-row">
@@ -88,6 +105,7 @@ export function DocumentsPage() {
             <div className="inline-tags">
               <StatusChip value={selectedDocument?.verification ?? "Requested"} />
               <span className="tag neutral">{selectedDocument?.secureAccess}</span>
+              {analysis && canRunAnalysis ? <span className="tag review">AI-assisted review</span> : null}
             </div>
           </div>
 
@@ -118,9 +136,107 @@ export function DocumentsPage() {
           </div>
 
           <div className="inline-actions">
-            <button className="button secondary" onClick={() => navigate("/return-workspace")}>Open linked return section</button>
-            <button className="button ghost" onClick={() => navigate("/collaboration")}>Open related messages</button>
+            <button
+              className={`button ${isAnalyzing ? "disabled" : ""}`}
+              disabled={!selectedDocument || isAnalyzing || !canRunAnalysis}
+              onClick={() => {
+                if (canRunAnalysis) {
+                  runDocumentAnalysis(selectedDocument.id);
+                }
+              }}
+            >
+              {isAnalyzing ? "Analyzing..." : analysis ? "Run mock analysis again" : "Analyze document"}
+            </button>
+            {canOpenReturnWorkspace ? (
+              <button className="button secondary" onClick={() => navigate("/return-workspace")}>Open linked return section</button>
+            ) : null}
+            <button className="button ghost" onClick={() => navigate("/client-workspace")}>Open client workspace</button>
           </div>
+
+          {analysis && canRunAnalysis ? (
+            <div className="analysis-panel">
+              <div className="section-heading">
+                <div>
+                  <h3>Mock analysis</h3>
+                  <p className="muted">AI-assisted review only. Human review required before any return change.</p>
+                </div>
+                <div className="inline-tags">
+                  <span className="tag neutral">{analysis.documentType}</span>
+                  <span className="tag neutral">{analysis.issuer}</span>
+                </div>
+              </div>
+
+              <div className="detail-grid analysis-summary-grid">
+                <article className="detail-card">
+                  <span className="eyebrow">Classification</span>
+                  <strong>{analysis.documentType}</strong>
+                  <p className="muted">Mock pipeline classified this upload as {analysis.documentType}.</p>
+                </article>
+                <article className="detail-card">
+                  <span className="eyebrow">Tax year</span>
+                  <strong>{analysis.taxYear}</strong>
+                  <p className="muted">Analysis completed {analysis.analyzedAt}</p>
+                </article>
+                <article className="detail-card">
+                  <span className="eyebrow">Review alerts</span>
+                  <strong>{analysis.insights.length}</strong>
+                  <p className="muted">Suggested actions only. No return changes applied automatically.</p>
+                </article>
+              </div>
+
+              <div className="two-column-grid">
+                <article className="panel inset-panel">
+                  <div className="section-heading">
+                    <h4>Extracted Fields</h4>
+                    <span className="tag review">Mock analysis</span>
+                  </div>
+                  <ul className="compact-list">
+                    {analysis.extractedFields.map((field) => (
+                      <li key={field.name}>
+                        <div className="list-title-row">
+                          <strong>{field.label}</strong>
+                          <span className="meta-text">{formatConfidence(field.confidence)}</span>
+                        </div>
+                        <p>{String(field.value)}</p>
+                        <span className="meta-text">{field.sourceLocation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="panel inset-panel">
+                  <div className="section-heading">
+                    <h4>Review Alerts</h4>
+                    <span className="tag warning">Human review required</span>
+                  </div>
+                  <ul className="compact-list">
+                    {analysis.insights.map((insight) => (
+                      <li key={insight.id}>
+                        <div className="list-title-row">
+                          <strong>{insight.title}</strong>
+                          <StatusChip value={insight.reviewStatus} />
+                        </div>
+                        <p>{insight.reason}</p>
+                        <div className="workflow-meta">
+                          <span>Suggested action: {insight.recommendedAction}</span>
+                          <span>Confidence: {formatConfidence(insight.confidence)}</span>
+                        </div>
+                      </li>
+                    ))}
+                    {analysis.comparison.reviewChecks.map((check) => (
+                      <li key={check.type}>
+                        <div className="list-title-row">
+                          <strong>{check.label}</strong>
+                          <span className="meta-text">{formatConfidence(check.confidence)}</span>
+                        </div>
+                        <p>{check.outcome}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+            </div>
+          ) : null}
         </article>
 
         <article className="workspace-rail">
@@ -146,23 +262,25 @@ export function DocumentsPage() {
               <span className="tag neutral">Context preserved</span>
             </div>
             <div className="stack-list">
-              <button
-                className="stack-row interactive"
-                onClick={() => {
-                  setActiveClientId(activeClient.id);
-                  setActiveReturnId(selectedDocument?.returnId ?? activeReturn.id);
-                  navigate("/return-workspace");
-                }}
-              >
+              {canOpenReturnWorkspace ? (
+                <button
+                  className="stack-row interactive"
+                  onClick={() => {
+                    setActiveClientId(activeClient.id);
+                    setActiveReturnId(selectedDocument?.returnId ?? activeReturn.id);
+                    navigate("/return-workspace");
+                  }}
+                >
+                  <div>
+                    <strong>Return workspace</strong>
+                    <p>Open the linked tax section without losing the active client context.</p>
+                  </div>
+                </button>
+              ) : null}
+              <button className="stack-row interactive" onClick={() => navigate("/client-workspace")}>
                 <div>
-                  <strong>Return workspace</strong>
-                  <p>Open the linked tax section without losing the active client context.</p>
-                </div>
-              </button>
-              <button className="stack-row interactive" onClick={() => navigate("/collaboration")}>
-                <div>
-                  <strong>Collaboration and tasks</strong>
-                  <p>Jump to the request or thread connected to this document.</p>
+                  <strong>Client workspace</strong>
+                  <p>Jump to the connected request or message inside the unified workflow page.</p>
                 </div>
               </button>
             </div>
