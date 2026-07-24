@@ -22,6 +22,7 @@ export function Topbar() {
     availableReturns,
     setActiveClientId,
     setActiveReturnId,
+    setDocumentFocusContext,
     hasPermission
   } = useAppContext();
   const { currentUser, signOut } = useAuth();
@@ -39,6 +40,8 @@ export function Topbar() {
       unread: true,
       clientId: "client-001",
       returnId: "ret-2026-001",
+      documentId: "doc-001",
+      alertId: "alert-doc-001-2",
       route: "/documents"
     },
     {
@@ -131,6 +134,15 @@ export function Topbar() {
     if (canSeeFirmSelectors || target.clientId === currentUser.clientId) {
       setActiveClientId(target.clientId);
       setActiveReturnId(target.returnId);
+    }
+    if (target.route === "/documents") {
+      setDocumentFocusContext({
+        clientId: target.clientId,
+        returnId: target.returnId,
+        documentId: target.documentId ?? null,
+        alertId: target.alertId ?? null,
+        fieldName: null
+      });
     }
     navigate(target.route);
     setIsNotificationsOpen(false);

@@ -1,189 +1,208 @@
 # Green Ledger
 
-A secure, AI-assisted tax workflow prototype connecting clients, preparers, reviewers, and administrators.
+A secure, AI-assisted tax workflow prototype for connected client intake, document review, preparation, and approval.
 
-Green Ledger is a single connected tax workflow rather than a collection of separate tools. The product is designed to help clients understand what to do next, help CPA teams prioritize and prepare returns, help reviewers verify work and approve returns, and help administrators manage access and oversight.
+Green Ledger is one connected workflow rather than a collection of separate tools. The product links client intake, document evidence, exception review, return verification, reviewer follow-up, and administrative oversight inside a single role-based experience.
 
 ## 1. Product Overview
 
-Tax preparation often breaks down into scattered documents, repeated client follow-ups, unclear ownership, disconnected communication, and limited visibility into how return values were produced.
+Tax engagements often break down into scattered documents, repeated client follow-ups, unclear ownership, manual review, disconnected communication, and limited visibility into how a value reached the return.
 
-Green Ledger brings client intake, checklist generation, document collection, preparation, review, communication, AI-assisted checks, and administration into one coherent workflow. The prototype focuses on how work moves across roles while keeping evidence, next actions, and permissions understandable.
+Green Ledger connects intake, document collection, AI-assisted exception review, task ownership, client communication, return evidence, reviewer decisions, permissions, and audit history. The current prototype demonstrates an individual Form 1040 workflow, but the underlying object model could support broader tax, audit, accounting, and advisory engagements.
 
-## 2. Original Scope
+## 2. Product Workflow
 
-The original challenge was to address all 10 product areas through one coherent tax platform prototype:
+1. A user signs in through one shared login page.
+2. The account’s assigned role determines access.
+3. The client completes a guided intake survey.
+4. Survey answers generate a personalized checklist.
+5. The client uploads requested documents or submits requested evidence.
+6. Documents are analyzed through a simulated local AI-assisted pipeline.
+7. The system classifies documents, extracts fields, compares values, and identifies exceptions.
+8. The preparer reviews unresolved exceptions instead of rechecking every document equally.
+9. The preparer verifies, corrects, requests information, or escalates.
+10. Confirmed requests appear in Client Workspace.
+11. Verified evidence appears in Return Workspace.
+12. Reviewer-visible items are routed for secondary review.
+13. Admin users manage access, roles, security, and audit visibility.
 
-1. Traceability
-2. Collaboration
-3. Where to start
-4. Navigation
-5. Roles
-6. Status
-7. Dashboard
-8. Affordances
-9. Complexity
-10. Trustworthy AI
-
-Green Ledger does not treat these as 10 disconnected screens. Each challenge is expressed inside the same tax-return workflow, from intake through review and administration.
-
-## 3. Product Workflow
-
-1. A client signs in through the shared demo login.
-2. The client completes a guided intake survey in Client Workspace.
-3. Survey answers generate a personalized checklist of required follow-up items.
-4. The client reviews requests, opens the document workflow, and responds to intake tasks.
-5. Documents move through a mocked AI-assisted analysis flow.
-6. The system extracts fields, compares them to return data, and generates review insights.
-7. Suggested tasks or document requests are created for the appropriate person.
-8. A preparer reviews source documents, checklist items, and return values.
-9. A reviewer verifies the work, escalates issues, or approves review actions.
-10. An administrator manages users, permissions, security settings, and audit visibility.
-
-## 4. Main Product Areas
+## 3. Main Product Areas
 
 ### Client Workspace
 
-Client Workspace combines:
+Client Workspace merges the earlier client-home and collaboration concepts into one connected experience. It currently includes:
 
-- return status
+- current return status
 - next recommended action
 - guided intake survey
 - personalized checklist
-- document requests
-- task ownership
+- confirmed document requests
+- task ownership and due dates
 - client-visible messages
 - recent activity
+- submitted evidence handoff into the document workflow
 
-This area intentionally merges the earlier client-home and collaboration concepts so that work and communication stay tied to the same return instead of being repeated across separate screens.
+Survey answers and confirmed document requests flow into the same Action Checklist instead of creating separate task systems.
 
 ### CPA Dashboard
 
-The dashboard is action-oriented rather than report-oriented. It includes:
+The CPA Dashboard is action-oriented rather than chart-heavy. It includes:
 
-- prioritized return queue
-- urgent items
-- waiting-on-client work
-- returns ready for review
-- deadlines
-- workload and capacity signals
-- search and filters
+- prioritized work queue
+- urgent deadlines
+- waiting-on-client items
+- document exceptions
+- newly submitted evidence
+- review-ready returns
+- escalated items
+- workload and ownership context
+- search and filtering
 
-The main surface is designed to answer what needs attention next, not just to summarize totals.
-
-### Return Workspace
-
-Return Workspace is the core review surface. It includes:
-
-- return sections and tax fields
-- linked source documents
-- source location and transformation details
-- AI-assisted review suggestions
-- manual correction flow
-- recommendation acceptance and escalation actions
-- reviewer notes
-- audit history
-
-Traceability is embedded through source evidence inside the field-review flow rather than exposed as a separate product label.
+The main question it answers is: what needs attention now?
 
 ### Documents
 
-The Documents area includes:
+The Documents page is an exception-first review workspace. It includes:
 
-- secure document registry
-- document category and related return section
+- 10+ fictional tax documents for Avery Stone
+- single-document selection
+- multi-document selection
+- select-all-visible
+- batch analysis
+- processing progress
+- exception summary cards
+- document preview
+- extracted-fields review table
+- return-value comparison
+- source page and box location
+- extraction confidence
+- review status
+- concise review alerts
+- linked work
+- Review next exception
+
+Available actions:
+
+- Verify field
+- Correct extraction
+- Request information
+- Escalate
+
+Behavior:
+
+- Verify field records who verified the field and when.
+- Correct extraction preserves the original extracted value and requires a reason.
+- Request information creates a draft first and becomes client-visible only after confirmation.
+- Escalate creates reviewer-visible work.
+- Review next exception moves the preparer to the next unresolved item.
+
+The analysis is simulated locally. No real AI provider, OCR service, or backend API is used.
+
+### Return Workspace
+
+Return Workspace includes:
+
+- return sections and fields
+- linked source documents
+- source location
+- extracted source value
 - verification status
-- secure access indicators
-- document preview placeholder
-- mocked AI analysis trigger
-- extracted fields
-- confidence levels
-- review alerts
+- verifier
+- unresolved alert count
+- AI-assisted recommendations
+- manual correction
+- escalation
+- reviewer notes
+- audit history
+
+Traceability is embedded through source evidence rather than shown as a separate “Traceability” panel.
 
 ### Admin and Role Settings
 
-The administrator area includes:
+Admin and Role Settings includes:
 
 - user list
 - assigned roles
 - permission matrix
-- security settings
+- security controls
 - access activity
-- audit logs
+- audit visibility
 
-This area is restricted to the administrator account.
+This page is restricted to the administrator account.
 
-## 5. Role-Based Experience
+## 4. Role-Based Access
 
-All users enter through one generic sign-in page. The application determines the role from the signed-in account rather than asking the user to choose a role in the product UI.
+Users do not choose their role in the UI. All users enter through one login page, and the signed-in account determines permissions.
 
-### Client
+### Client — Avery Stone
 
 Can:
 
-- view their own workspace
+- access Client Workspace
 - complete the intake survey
-- review checklist items
-- open their own document workflow
-- view client-visible messages
-- see their own return status
+- view the personalized checklist
+- open own documents
+- submit requested evidence
+- view own status
+- view client-visible communication
 
 Cannot:
 
-- see other clients
-- see internal notes
-- edit return values
-- use firm review actions
-- access firm or administration pages
+- access CPA Dashboard
+- access Return Workspace
+- view internal notes
+- view other clients
+- access Admin and Role Settings
 
-### Preparer
+### Preparer — Noah Patel
 
 Can:
 
-- view the dashboard for assigned work
-- open assigned returns
-- review documents
-- correct return values
+- access CPA Dashboard
+- review assigned returns
+- access Documents
+- verify fields
+- correct extractions
+- create client requests
 - respond to AI-assisted insights
 - add internal notes
-- create client-facing follow-up items through the intake workflow
+- escalate issues
 
 Cannot:
 
-- approve final returns
+- approve the final return
 - manage users or roles
 - access Admin and Role Settings
 
-### Reviewer
+### Reviewer — Maya Chen, CPA
 
 Can:
 
-- view dashboard work
-- review return-workspace evidence
-- approve review actions
-- escalate issues
-- inspect audit history
-- access reviewer-facing notes and review controls
+- access review-ready work
+- inspect preparer corrections
+- review escalated document issues
+- complete reviewer-assigned document work
+- view relevant audit history
+- use reviewer approval controls in Return Workspace where supported
+- lock verified fields where supported
 
 Cannot:
 
-- manage users
-- assign roles
-- change firm-wide security settings
+- manage users or firm-wide security
+- access admin controls
 
-### Administrator
+### Administrator — Jordan Lee
 
 Can:
 
+- access Admin and Role Settings
 - manage users and assigned roles
 - review permissions
-- view security settings
-- inspect firm-wide access activity
-- inspect audit logs
+- inspect security activity and audit logs
 
-Administrator access does not automatically grant unrestricted tax-editing privileges. In the current implementation, the administrator experience is centered on administration rather than return preparation.
+Administrator access does not automatically grant unrestricted tax-editing privileges.
 
-## 6. Demo Accounts
+## 5. Demo Accounts
 
 | Role | Name | Email | Password |
 |---|---|---|---|
@@ -192,107 +211,135 @@ Administrator access does not automatically grant unrestricted tax-editing privi
 | Reviewer | Maya Chen, CPA | maya@demo.com | demo123 |
 | Admin | Jordan Lee | jordan@demo.com | demo123 |
 
-These credentials are for prototype demonstration only and must not be used in a production environment.
+These credentials exist only for prototype demonstration and must not be used in production.
 
-## 7. AI-Assisted Review
-
-The AI workflow is mocked.
+## 6. AI-Assisted Document Review
 
 The simulated pipeline is:
 
-Document upload or selection  
-→ document classification  
+Document upload  
+→ classification  
 → field extraction  
-→ comparison with return data  
-→ rule checks  
-→ review insight  
-→ task suggestion  
+→ comparison with survey and return data  
+→ deterministic checks  
+→ exception creation  
+→ task or request suggestion  
 → human decision
 
-The current mock service supports workflow checks such as:
+Implemented checks in the current local model include:
 
-- missing supporting document
+- missing expected document
 - value mismatch
 - low extraction confidence
 - tax-year mismatch
-- possible duplicate document
+- possible duplicate
+- failed processing
+- incomplete supporting information
 
-The system does not independently file, approve, or silently modify a return.
+The system produces review alerts, not final tax conclusions.
 
-Human actions in the current prototype:
+Green Ledger does not:
 
-- Accept recommendation
-- Correct value
-- Escalate
+- use a real AI API
+- use a real OCR provider
+- use a tax-law engine
+- automatically approve or file a return
+- send a client request without human confirmation
 
-Accepted actions update shared local state and audit history where implemented.
+## 7. Shared Exception Workflow
+
+Document exceptions drive the rest of the application through one shared state path.
+
+Examples:
+
+- If a preparer confirms a request:
+  - the alert becomes `Waiting on Client`
+  - the request appears in Client Workspace
+  - the dashboard reflects the status
+  - activity and audit history update
+
+- If a field is verified:
+  - Documents shows `Verified`
+  - Return Workspace shows verified evidence
+  - related work updates
+  - audit history records the actor and timestamp
+
+- If an alert is escalated:
+  - Documents shows `Escalated`
+  - reviewer-visible work is created
+  - dashboard ownership changes
+  - audit history records the escalation
+
+The product uses one shared state path rather than separate task systems for each page.
 
 ## 8. Client Intake Survey
 
-The survey personalizes document collection and follow-up work. It covers:
+The intake survey currently supports:
 
-- personal and household
-- employment and income
-- investments and banking
-- housing, education, and deductions
-- business and other situations
+- guided multi-step intake
+- plain-language questions
+- conditional questions
+- personalized checklist generation
+- save-and-resume behavior through `localStorage`
+- review and edit after answering
+- generated requirements merged into existing workflow items
+- duplicate checklist prevention
 
-Examples of generated checklist logic:
+Examples:
 
-- multiple employers -> multiple W-2 requests
-- bank interest -> 1099-INT follow-up
-- dependent care -> provider details and amount confirmation
-- mortgage interest -> Form 1098 request
-- charitable donations -> contribution support request
-- contractor income -> 1099-NEC and business-expense follow-up
-
-Generated requirements are merged into the existing Action Checklist instead of creating a separate checklist system.
-
-Survey progress is saved and restored through `localStorage`, so the prototype supports save-and-resume behavior after refresh.
+- two employers → two W-2 requests
+- bank interest → 1099-INT request
+- mortgage interest → Form 1098 request
+- dependent care → provider information request
+- contractor income → 1099-NEC and expense records
 
 ## 9. Security and Trust
 
-The interface demonstrates security concepts through:
+The product demonstrates security concepts through:
 
-- predefined account permissions
+- one generic sign-in
+- predefined permissions
 - protected routes
 - role-based navigation
 - least-privilege access
-- masked sensitive information
+- masked sensitive values
 - MFA and secure-session indicators
 - audit history
 - verified and locked states
-- separation of client-visible and internal information
-- human review of AI suggestions
+- internal information hidden from clients
+- human review of AI-assisted recommendations
 
-This prototype demonstrates security through frontend behavior and interface design. It does not implement production authentication, encryption, secure storage, or compliance controls.
+This prototype demonstrates security through frontend behavior and interface design. It does not implement production authentication, encryption, secure document storage, or regulatory compliance controls.
 
-## 10. How the Product Addresses the 10 Challenges
+## 10. How Green Ledger Addresses the 10 Challenges
 
-| Challenge | How Green Ledger addresses it |
+| Challenge | Current implementation |
 |---|---|
-| Traceability | Return values link to source documents, locations, and transformations through Source Evidence. |
-| Collaboration | Messages, tasks, requests, and notes stay connected to the same return workflow. |
-| Where to start | The client sees a guided intake survey, a clear next action, and a personalized checklist. |
-| Navigation | Dashboard rows, return fields, documents, tasks, and notifications move users to related work. |
-| Roles | Fixed demo accounts enforce distinct client, preparer, reviewer, and admin experiences. |
-| Status | Returns and workflow items use consistent statuses, owners, and next actions. |
-| Dashboard | CPA staff receive a prioritized operational queue rather than passive reporting. |
-| Affordances | Editable, locked, verified, clickable, and AI-assisted states are visually distinct. |
-| Complexity | Search, filters, summaries, lists, and progressive disclosure support larger mock datasets. |
-| Trustworthy AI | Every insight includes evidence, rationale, confidence, status, and a human decision path. |
+| Traceability | Return fields link to source documents, locations, extracted values, verification state, and audit history. |
+| Collaboration | Tasks, document requests, messages, and activity remain connected to the same workflow item. |
+| Where to start | Client Workspace presents the next action, survey progress, and personalized checklist. |
+| Navigation | Dashboard, Documents, Client Workspace, and Return Workspace preserve client, return, document, alert, and field context. |
+| Roles | Fixed demo accounts demonstrate separate client, preparer, reviewer, and administrator permissions. |
+| Status | Returns, documents, alerts, requests, and tasks use consistent statuses and ownership. |
+| Dashboard | Firm users receive a prioritized operational queue instead of passive reporting. |
+| Affordances | Clickable, editable, verified, locked, selected, and disabled states are visually clear. |
+| Complexity | Search, filters, batch actions, summary counts, and progressive disclosure support larger document sets. |
+| Trustworthy AI | AI-assisted findings include evidence, confidence, rationale, human actions, and auditability. |
 
-## 11. Technology
+## 11. Technical Architecture
+
+This repository currently uses:
 
 - React
 - Vite
 - JavaScript
 - React Router
 - CSS
+- Context API
+- localStorage
 - local mock data
-- `localStorage`
-- local component state
-- shared context state
+- deterministic local analysis service
+- local asynchronous simulation
 
 ## 12. Project Structure
 
@@ -308,80 +355,122 @@ src/
 └── utils/
 ```
 
-- `app/`: shell, router, shared application state, and error boundary
-- `components/`: reusable UI such as top bar, sidebar, badges, and route protection
+- `app/`: shell, router, and shared application state
+- `components/`: reusable UI such as top bar, sidebar, badges, and protected routes
 - `context/`: authentication context for demo sign-in and session persistence
-- `data/`: mock returns, documents, demo users, and intake survey schema
-- `pages/`: main product surfaces such as Client Workspace, Dashboard, Return Workspace, Documents, Login, and Admin
-- `services/`: mocked AI-assisted document-review pipeline
-- `styles/`: design tokens and shared layout styles
-- `utils/`: permission mapping, checklist generation, and formatting helpers
+- `data/`: demo users, returns, documents, analysis definitions, and survey schema
+- `pages/`: Client Workspace, Dashboard, Return Workspace, Documents, Login, and Admin
+- `services/`: local simulated analysis and workflow helpers
+- `styles/`: shared design tokens and layout rules
+- `utils/`: permissions, checklist generation, and formatting helpers
+
+Important implementation files include:
+
+- `src/data/documents.js`
+- `src/data/documentAnalysis.js`
+- `src/services/mockAiService.js`
+- `src/app/appContext.jsx`
+- `src/utils/permissions.js`
 
 ## 13. Running the Project
 
 ```bash
 npm install
 npm run dev
-```
-
-Production build:
-
-```bash
 npm run build
 ```
 
-Vite serves the local development app and prints the active local URL when `npm run dev` starts.
+There is currently no lint script and no test script in `package.json`.
 
-## 14. Prototype Walkthrough
+## 14. Recommended Product Walkthrough
 
 1. Sign in as Avery Stone.
-2. Continue or review the intake survey.
-3. Show the generated checklist and document follow-up items.
-4. Sign out and sign in as Noah Patel.
-5. Open the CPA Dashboard and choose a return needing attention.
-6. Open Documents and run mocked analysis on the First Harbor Bank 1099-INT.
-7. Open Return Workspace and correct, accept, or escalate the review item.
-8. Sign out and sign in as Maya Chen to show reviewer-facing access and approval controls.
-9. Sign out and sign in as Jordan Lee to show restricted administration controls.
+2. Show the client’s next action and survey-generated checklist.
+3. Show a document request or submitted item.
+4. Sign in as Noah Patel.
+5. Open a document exception from the CPA Dashboard.
+6. Show attention filters or batch processing on Documents.
+7. Open a selected document.
+8. Show the preview, extracted fields, return comparison, and alert.
+9. Verify, correct, request information, or escalate.
+10. Use Review next exception.
+11. Show the updated evidence in Return Workspace.
+12. Sign in as Maya Chen and show reviewer work.
+13. Sign in as Jordan Lee and show admin-only access.
 
-## 15. Key Design Decisions
+This sequence fits a 3–5 minute demonstration.
 
-- one connected system instead of 10 disconnected screens
+## 15. GreenGrowth CPA Relevance
+
+Green Ledger is a strong conceptual fit for a growing, distributed, multi-service CPA firm because it demonstrates needs that are common in that environment:
+
+- industry-specific intake
+- personalized document checklists
+- exception-first document review
+- distributed-team continuity
+- clear task ownership
+- connected client communication
+- human-controlled AI assistance
+- strong auditability
+- consistent workflows across tax, audit, accounting, and advisory services
+
+The current Form 1040 scenario is a prototype configuration. The same object model could be adapted to:
+
+- business tax
+- audit and assurance
+- monthly accounting close
+- CFO services
+- advisory engagements
+- industry-specific workflows
+
+This is framed as a proposed fit, not a claim about any private internal GreenGrowth CPA systems.
+
+## 16. Key Product Decisions
+
+- one connected platform instead of 10 disconnected concepts
 - Client Home and Collaboration merged into Client Workspace
-- role selector removed from the product-style interface
-- account permissions determined at sign-in
-- traceability embedded directly in the review experience
-- AI recommendations remain human-controlled
-- dashboard optimized for next actions instead of charts
-- mocked services used to keep scope focused on workflow and product design
+- generic sign-in with account-assigned permissions
+- role selector removed from the main product interface
+- exception-first document review
+- batch analysis with individual exception handling
+- shared task and audit state
+- request drafts require confirmation
+- traceability embedded into the review experience
+- AI remains assistive and human-controlled
+- connected navigation preserves workflow context
 
-## 16. Prototype Limitations
+## 17. Prototype Limitations
 
-- frontend-only prototype
-- mock authentication
-- mock AI and OCR-like analysis behavior
-- mock document preview
+- frontend-only
+- demo authentication
+- `localStorage` session persistence
+- simulated AI and OCR behavior
+- deterministic document checks
+- fictional documents and client data
 - no backend or database
-- no real tax calculations
-- no production encryption
-- no real-time collaboration
+- no real secure document storage
+- no tax calculations
 - no filing integration
+- no external communication delivery
+- no real-time collaboration
+- no production compliance controls
 - no legal or tax advice
 
-These omissions are intentional so the prototype can stay focused on workflow, evidence, access control, and user experience.
+These omissions are intentional so the submission stays focused on product workflow and user experience.
 
-## 17. Future Enhancements
+## 18. Future Enhancements
 
-- production authentication and identity management
+- production identity and access management
 - secure document storage
 - real OCR and document classification
-- tax software integration
-- configurable firm review rules
-- notification and workflow automation
-- compliance-grade audit logging
+- configurable firm-specific rules
+- tax and audit software integrations
+- engagement templates by service and industry
+- compliance-grade logging
+- real notification delivery
 - accessibility testing
 - usability testing with clients and tax professionals
 
-## 18. Submission Note
+## 19. Final Submission Statement
 
-Green Ledger was designed as a focused product prototype demonstrating how client intake, document evidence, task ownership, collaboration, review, AI assistance, and access control can work together in one understandable tax workflow.
+Green Ledger demonstrates how client intake, document evidence, AI-assisted exception review, task ownership, professional verification, reviewer oversight, permissions, and audit history can work together in one understandable CPA workflow.

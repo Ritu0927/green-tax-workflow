@@ -36,6 +36,8 @@ export function ClientHomePage() {
     submitSurvey,
     addManualChecklistItem,
     markSurveyAnswerForClarification,
+    submitClientDocumentRequest,
+    setDocumentFocusContext,
     hasPermission
   } = useAppContext();
   const navigate = useNavigate();
@@ -57,8 +59,10 @@ export function ClientHomePage() {
       "Needs Review": 0,
       Waiting: 1,
       "In Progress": 2,
-      "Not Started": 3,
-      Completed: 4
+      Submitted: 3,
+      "Not Started": 4,
+      Draft: 5,
+      Completed: 6
     };
 
     return mockData.workflowItems
@@ -115,6 +119,16 @@ export function ClientHomePage() {
     }
 
     if (item.relatedDocumentId || item.actionType === "upload") {
+      if (item.visibility === "Client" && item.type === "document-request" && item.status !== "Submitted" && item.status !== "Completed") {
+        submitClientDocumentRequest(item.id, { id: "user-001", name: activeClient.name });
+      }
+      setDocumentFocusContext({
+        clientId: activeClient.id,
+        returnId: activeReturn.id,
+        documentId: item.relatedDocumentId ?? null,
+        alertId: item.sourceAlertId ?? null,
+        fieldName: null
+      });
       navigate("/documents");
       return;
     }
@@ -422,6 +436,7 @@ export function ClientHomePage() {
                     <span>Due: {formatDateLabel(item.dueDate)}</span>
                     <span>Related: {buildRelatedLabel(item, mockData)}</span>
                   </div>
+                  {item.clientMessage ? <p className="workflow-client-message">{item.clientMessage}</p> : null}
                 </div>
                 {item.actionLabel ? (
                   <button className="button secondary" onClick={() => openRelatedItem(item)}>

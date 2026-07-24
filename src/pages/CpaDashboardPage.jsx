@@ -14,7 +14,7 @@ function computePriority(item) {
 }
 
 export function CpaDashboardPage() {
-  const { mockData, setActiveClientId, setActiveReturnId } = useAppContext();
+  const { mockData, setActiveClientId, setActiveReturnId, setDocumentFocusContext, documentExceptionQueue, completeReviewerTask, currentUser, hasPermission } = useAppContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -49,10 +49,54 @@ export function CpaDashboardPage() {
     return matchesSearch && matchesStatus && matchesOwner;
   });
 
+  const documentQueueItems = documentExceptionQueue
+    .filter((item) => hasPermission("viewAssignedReturns") || hasPermission("reviewDocuments"))
+    .map((item) => ({
+      ...item,
+      priority: computePriority({
+        urgency: item.urgency,
+        status: item.status === "Waiting on Client" ? "Waiting on Client" : item.status === "Escalated" ? "Ready for Review" : "In Preparation",
+        dueDate: item.dueDate,
+        aiFlags: item.alertId ? 1 : 0,
+        reviewItems: 1
+      })
+    }));
+
+  const queueItems = [...filteredReturns.map((item) => ({ ...item, kind: "return" })), ...documentQueueItems]
+    .filter((item) => {
+      const haystack = item.kind === "return"
+        ? `${item.clientName} ${item.form} ${item.nextAction}`
+        : `${item.clientName} ${item.documentLabel} ${item.issue} ${item.relatedReturnSection}`;
+      const matchesSearch = haystack.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesOwner =
+        ownerFilter === "All" ||
+        item.preparer === ownerFilter ||
+        item.reviewer === ownerFilter ||
+        item.owner === ownerFilter;
+      return matchesSearch && matchesStatus && matchesOwner;
+    })
+    .sort((a, b) => b.priority - a.priority);
+
   const openContext = (clientId, returnId, route) => {
     setActiveClientId(clientId);
     setActiveReturnId(returnId);
     navigate(route);
+  };
+
+  const openDocumentContext = (item) => {
+    setActiveClientId(item.clientId);
+    if (item.returnId) {
+      setActiveReturnId(item.returnId);
+    }
+    setDocumentFocusContext({
+      clientId: item.clientId,
+      returnId: item.returnId,
+      documentId: item.documentId,
+      alertId: item.alertId ?? null,
+      fieldName: item.fieldName ?? null
+    });
+    navigate("/documents");
   };
 
   const waitingOnClient = joinedReturns.filter((item) => item.status === "Waiting on Client");
@@ -62,7 +106,7 @@ export function CpaDashboardPage() {
   return (
     <div className="page-grid">
       <section className="summary-row">
-        <SummaryCard label="Priority Queue" value={String(filteredReturns.filter((item) => item.priority >= 45).length)} meta="High-signal returns with urgency, blockers, or review load." tone="accent" />
+        <SummaryCard label="Priority Queue" value={String(queueItems.filter((item) => item.priority >= 45).length)} meta="High-signal returns and document exceptions with urgency or blockers." tone="accent" />
         <SummaryCard label="Waiting on Client" value={String(waitingOnClient.length)} meta="Returns paused on document collection or open client questions." />
         <SummaryCard label="Ready for Review" value={String(readyForReview.length)} meta="Prepared returns that should move directly into reviewer action." />
         <SummaryCard label="Approaching Deadlines" value={String(approachingDeadlines.length)} meta="Returns due within the next two weeks." />
@@ -90,6 +134,8 @@ export function CpaDashboardPage() {
             <option>In Preparation</option>
             <option>Ready for Review</option>
             <option>Changes Requested</option>
+            <option>Needs Review</option>
+            <option>Escalated</option>
           </select>
           <select className="filter-select" value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
             <option>All</option>
@@ -108,36 +154,56 @@ export function CpaDashboardPage() {
             <span>Next action</span>
             <span>Move</span>
           </div>
-          {filteredReturns.map((item) => (
+          {queueItems.length ? queueItems.map((item) => (
             <div key={item.id} className="data-table-row">
               <div>
                 <strong>{item.clientName}</strong>
-                <p>{item.form} · {item.entity}</p>
+                <p>{item.kind === "return" ? `${item.form} · ${item.entity}` : `${item.documentLabel} · ${item.relatedReturnSection}`}</p>
+                <span className={`tag ${item.kind === "return" ? "neutral" : "review"}`}>{item.kind === "return" ? "Return" : "Document"}</span>
               </div>
               <div>
                 <StatusChip value={item.status} />
-                <p>{item.urgency} urgency · {item.aiFlags} AI flags</p>
+                <p>{item.kind === "return" ? `${item.urgency} urgency · ${item.aiFlags} AI flags` : `${item.urgency} urgency · document exception`}</p>
               </div>
               <div>
                 <strong>{item.owner}</strong>
-                <p>Next action owner · {item.owner === item.clientName ? "Client" : item.owner === item.reviewer ? "Reviewer" : "Preparer"}</p>
-                <p>Preparer: {item.preparer}</p>
-                <p>Reviewer: {item.reviewer}</p>
+                {item.kind === "return" ? (
+                  <>
+                    <p>Next action owner · {item.owner === item.clientName ? "Client" : item.owner === item.reviewer ? "Reviewer" : "Preparer"}</p>
+                    <p>Preparer: {item.preparer}</p>
+                    <p>Reviewer: {item.reviewer}</p>
+                  </>
+                ) : (
+                  <p>{item.alertId ? "Linked alert" : "Linked task"} · {item.documentLabel}</p>
+                )}
               </div>
               <div>
                 <strong>{formatDateLabel(item.dueDate)}</strong>
                 <p>{daysUntil(item.dueDate)} days remaining</p>
               </div>
               <div>
-                <strong>{item.nextAction}</strong>
-                <p>{item.blockedBy ?? item.stageNote}</p>
+                <strong>{item.kind === "return" ? item.nextAction : item.issue}</strong>
+                <p>{item.kind === "return" ? (item.blockedBy ?? item.stageNote) : item.relatedReturnSection}</p>
               </div>
               <div className="inline-actions">
-                <button className="button secondary" onClick={() => openContext(item.clientId, item.id, "/return-workspace")}>Open return</button>
-                <button className="button ghost" onClick={() => openContext(item.clientId, item.id, "/documents")}>Documents</button>
+                {item.kind === "return" ? (
+                  <>
+                    <button className="button secondary" onClick={() => openContext(item.clientId, item.id, "/return-workspace")}>Open return</button>
+                    <button className="button ghost" onClick={() => openContext(item.clientId, item.id, "/documents")}>Documents</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="button secondary" onClick={() => openDocumentContext(item)}>Open document</button>
+                    {hasPermission("approveReturns") && item.owner === currentUser?.name && item.taskId ? (
+                      <button className="button ghost" onClick={() => completeReviewerTask(item.taskId, currentUser)}>Complete review</button>
+                    ) : null}
+                  </>
+                )}
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="empty-note">No returns currently require your attention.</div>
+          )}
         </div>
       </section>
 

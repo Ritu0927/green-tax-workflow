@@ -1,3 +1,5 @@
+import { documents } from "./documents";
+
 export const roles = [
   { id: "client", label: "Client" },
   { id: "preparer", label: "Preparer" },
@@ -52,21 +54,6 @@ const returns = [
   { id: "ret-2026-012", clientId: "client-012", taxYear: "2025", form: "Form 1120-S", status: "In Preparation", owner: "Elena Brooks", nextAction: "Review R&D credit carryforward support.", urgency: "Medium", aiFlags: 4, reviewItems: 2, sections: ["Credits", "Payroll", "State"], dueDate: "2026-08-24", blockedBy: null, stageNote: "Complex credit work requires more evidence review." }
 ];
 
-const documents = [
-  { id: "doc-001", clientId: "client-001", returnId: "ret-2026-001", type: "1099-INT", label: "First Harbor Bank 1099-INT", category: "Income", uploadDate: "2026-07-19", verification: "Verified", relatedSection: "Income", sourceFields: 4, secureAccess: "MFA Verified", maskedAccount: "••••2184", previewStatus: "Available", pageCount: 2 },
-  { id: "doc-002", clientId: "client-001", returnId: "ret-2026-001", type: "Driver License", label: "State ID - Avery Stone", category: "Identity", uploadDate: "2026-07-18", verification: "Verified", relatedSection: "Identity", sourceFields: 2, secureAccess: "Restricted", maskedAccount: null, previewStatus: "Available", pageCount: 1 },
-  { id: "doc-003", clientId: "client-002", returnId: "ret-2026-002", type: "W-2", label: "Officer Payroll Summary", category: "Payroll", uploadDate: "2026-07-12", verification: "Needs Review", relatedSection: "Payroll", sourceFields: 9, secureAccess: "Internal Only", maskedAccount: null, previewStatus: "Available", pageCount: 3 },
-  { id: "doc-004", clientId: "client-002", returnId: "ret-2026-002", type: "Bank Statement", label: "Operating Account - June", category: "Banking", uploadDate: "2026-07-15", verification: "Verified", relatedSection: "Cash", sourceFields: 6, secureAccess: "MFA Verified", maskedAccount: "••••9281", previewStatus: "Available", pageCount: 5 },
-  { id: "doc-005", clientId: "client-003", returnId: "ret-2026-003", type: "Donation Receipt", label: "Foundation Donation Receipt", category: "Deductions", uploadDate: "2026-07-09", verification: "Verified", relatedSection: "Schedule A", sourceFields: 1, secureAccess: "Standard", maskedAccount: null, previewStatus: "Available", pageCount: 1 },
-  { id: "doc-006", clientId: "client-004", returnId: "ret-2026-004", type: "Expense Ledger", label: "Meals and Travel Extract", category: "Deductions", uploadDate: "2026-07-11", verification: "Needs Review", relatedSection: "Deductions", sourceFields: 14, secureAccess: "Internal Only", maskedAccount: null, previewStatus: "Available", pageCount: 8 },
-  { id: "doc-007", clientId: "client-008", returnId: "ret-2026-008", type: "Bank Statement", label: "Hospitality Main Account - Missing", category: "Banking", uploadDate: null, verification: "Requested", relatedSection: "Banking", sourceFields: 0, secureAccess: "Pending Upload", maskedAccount: "••••4410", previewStatus: "Pending", pageCount: 0 },
-  { id: "doc-008", clientId: "client-009", returnId: "ret-2026-009", type: "W-2", label: "Pineworks Labs W-2", category: "Income", uploadDate: "2026-07-13", verification: "Verified", relatedSection: "Income", sourceFields: 7, secureAccess: "MFA Verified", maskedAccount: null, previewStatus: "Available", pageCount: 2 },
-  { id: "doc-009", clientId: "client-010", returnId: "ret-2026-010", type: "K-1", label: "Shareholder Basis Support", category: "Shareholders", uploadDate: "2026-07-16", verification: "Needs Review", relatedSection: "Shareholders", sourceFields: 5, secureAccess: "Restricted", maskedAccount: null, previewStatus: "Available", pageCount: 4 },
-  { id: "doc-010", clientId: "client-011", returnId: "ret-2026-011", type: "W-2", label: "Pending W-2 Request", category: "Income", uploadDate: null, verification: "Requested", relatedSection: "Income", sourceFields: 0, secureAccess: "Pending Upload", maskedAccount: null, previewStatus: "Pending", pageCount: 0 },
-  { id: "doc-011", clientId: "client-001", returnId: "ret-2026-001", type: "Questionnaire PDF", label: "Dependent Care Follow-up", category: "Credits", uploadDate: "2026-07-20", verification: "Needs Review", relatedSection: "Credits", sourceFields: 3, secureAccess: "Standard", maskedAccount: null, previewStatus: "Available", pageCount: 2 },
-  { id: "doc-012", clientId: "client-012", returnId: "ret-2026-012", type: "Credit Memo", label: "R&D Carryforward Support", category: "Credits", uploadDate: "2026-07-18", verification: "Needs Review", relatedSection: "Credits", sourceFields: 5, secureAccess: "Internal Only", maskedAccount: null, previewStatus: "Available", pageCount: 6 }
-];
-
 const documentRequests = [
   { id: "req-001", clientId: "client-001", title: "Upload final 1099-INT", dueDate: "2026-07-25", owner: "Avery Stone", status: "Open", linkedDocumentId: "doc-001" },
   { id: "req-002", clientId: "client-008", title: "Provide June bank statement", dueDate: "2026-07-26", owner: "Blue Cedar Hospitality Group", status: "Open", linkedDocumentId: "doc-007" },
@@ -75,6 +62,10 @@ const documentRequests = [
 
 const tasks = [
   { id: "task-001", title: "Upload 1099-INT", clientId: "client-001", owner: "Avery Stone", dueDate: "2026-07-25", status: "Open", linkedTo: "doc-001", visibility: "Client", type: "Document Request" },
+  { id: "task-009", title: "Verify interest income", clientId: "client-001", owner: "Noah Patel", dueDate: "2026-07-29", status: "Review", linkedTo: "doc-001", visibility: "Internal", type: "AI Review" },
+  { id: "task-010", title: "Review mortgage-interest mapping", clientId: "client-001", owner: "Noah Patel", dueDate: "2026-07-30", status: "Open", linkedTo: "doc-016", visibility: "Internal", type: "Review Task" },
+  { id: "task-011", title: "Confirm dependent-care provider ID", clientId: "client-001", owner: "Avery Stone", dueDate: "2026-07-28", status: "Open", linkedTo: "doc-017", visibility: "Client", type: "Document Request" },
+  { id: "task-012", title: "Review charitable contribution support", clientId: "client-001", owner: "Maya Chen, CPA", dueDate: "2026-07-31", status: "In Progress", linkedTo: "doc-018", visibility: "Internal", type: "Review Task" },
   { id: "task-002", title: "Review officer compensation variance", clientId: "client-002", owner: "Elena Brooks", dueDate: "2026-07-27", status: "In Progress", linkedTo: "ret-2026-002", visibility: "Internal", type: "Review Task" },
   { id: "task-003", title: "Approve Schedule A support", clientId: "client-003", owner: "Maya Chen, CPA", dueDate: "2026-07-24", status: "Review", linkedTo: "ret-2026-003", visibility: "Internal", type: "Approval" },
   { id: "task-004", title: "Respond to reviewer comment on meals expense", clientId: "client-004", owner: "Elena Brooks", dueDate: "2026-07-25", status: "Blocked", linkedTo: "ret-2026-004", visibility: "Internal", type: "Change Request" },
@@ -239,9 +230,13 @@ export function normalizeWorkflowStatus(status) {
     case "Not started":
     case "Not Started":
       return "Not Started";
+    case "Draft":
+      return "Draft";
     case "In Progress":
     case "In progress":
       return "In Progress";
+    case "Submitted":
+      return "Submitted";
     case "Awaiting Review":
     case "Needs Reviewer Decision":
     case "Review":
@@ -310,9 +305,18 @@ export function buildWorkflowItemsFromData({
       relatedReturnSection: baseDocument?.relatedSection ?? inferSectionFromLink(task.linkedTo, task.clientId, documentsCollection, returnsCollection),
       visibility: task.visibility,
       relatedEntityId: task.linkedTo,
-      actionLabel: relatedRequest ? "Upload document" : task.visibility === "Client" ? "Continue" : "Open details",
+      actionLabel:
+        normalizeWorkflowStatus(task.status) === "Submitted"
+          ? "View document"
+          : relatedRequest
+            ? "Upload document"
+            : task.visibility === "Client"
+              ? "Continue"
+              : "Open details",
       messages: relatedMessages.map((message) => message.id),
-      activity: relatedActivity.map((item) => item.id)
+      activity: relatedActivity.map((item) => item.id),
+      clientMessage: relatedRequest?.clientMessage ?? task.clientMessage ?? null,
+      sourceAlertId: relatedRequest?.sourceAlertId ?? task.sourceAlertId ?? null
     };
   });
 

@@ -35,9 +35,11 @@ export function ReturnWorkspacePage() {
     activeClient,
     activeReturn,
     mockData,
+    documentAnalyses,
     acceptInsightRecommendation,
     saveFieldCorrection,
     escalateInsight,
+    setDocumentFocusContext,
     hasPermission
   } = useAppContext();
   const navigate = useNavigate();
@@ -69,6 +71,15 @@ export function ReturnWorkspacePage() {
   const selectedField = selectedGroup?.fields.find((field) => field.id === selectedFieldId) ?? selectedGroup?.fields[0];
 
   const linkedDoc = mockData.documents.find((doc) => doc.id === selectedField?.sourceDocumentId);
+  const linkedDocAnalysis = linkedDoc ? documentAnalyses[linkedDoc.id] : null;
+  const linkedExtractedField = linkedDocAnalysis?.extractedFields?.find((field) => {
+    const normalizedFieldLabel = selectedField?.label?.toLowerCase() ?? "";
+    const normalizedSourceField = selectedField?.sourceField?.toLowerCase() ?? "";
+    return field.label.toLowerCase() === normalizedFieldLabel || normalizedSourceField.includes(field.label.toLowerCase());
+  }) ?? linkedDocAnalysis?.extractedFields?.[0];
+  const linkedFieldAlerts = linkedDocAnalysis?.insights?.filter(
+    (alert) => alert.relatedField === linkedExtractedField?.label && ["Open", "In Review", "Waiting on Client", "Escalated"].includes(alert.reviewStatus)
+  ) ?? [];
   const aiInsights = mockData.aiInsights.filter((item) => item.returnId === activeReturn.id);
   const actionableInsight = aiInsights.find((item) => item.fieldId === selectedField?.id) ?? aiInsights[0];
   const notes = mockData.reviewNotes.filter((note) => note.returnId === activeReturn.id);
@@ -242,7 +253,19 @@ export function ReturnWorkspacePage() {
                 <div>
                   <strong>Document</strong>
                   {linkedDoc ? (
-                    <button className="text-link inline-text-link" onClick={() => navigate("/documents")}>
+                    <button
+                      className="text-link inline-text-link"
+                      onClick={() => {
+                        setDocumentFocusContext({
+                          clientId: activeClient.id,
+                          returnId: activeReturn.id,
+                          documentId: linkedDoc.id,
+                          alertId: null,
+                          fieldName: linkedExtractedField?.name ?? null
+                        });
+                        navigate("/documents");
+                      }}
+                    >
                       {linkedDoc.label}
                     </button>
                   ) : (
@@ -254,6 +277,27 @@ export function ReturnWorkspacePage() {
                 <div>
                   <strong>Location</strong>
                   <p>{selectedField?.sourcePage} · {selectedField?.sourceField}</p>
+                </div>
+              </li>
+              <li className="stack-row">
+                <div>
+                  <strong>Extracted value</strong>
+                  <p>{linkedExtractedField?.value ?? selectedField?.sourceValue ?? "Not available"}</p>
+                </div>
+              </li>
+              <li className="stack-row">
+                <div>
+                  <strong>Verification status</strong>
+                  <p>
+                    {linkedExtractedField?.reviewStatus ?? "Needs Review"}
+                    {linkedExtractedField?.verifiedBy ? ` · Verified by ${linkedExtractedField.verifiedBy}` : ""}
+                  </p>
+                </div>
+              </li>
+              <li className="stack-row">
+                <div>
+                  <strong>Open alerts</strong>
+                  <p>{linkedFieldAlerts.length} unresolved</p>
                 </div>
               </li>
               <li className="stack-row">

@@ -21,6 +21,7 @@ export function AppShell() {
   const location = useLocation();
   const { roleConfig } = useAppContext();
   const Page = pageMap[location.pathname] ?? CpaDashboardPage;
+  const accessMessage = location.state?.accessMessage;
 
   return (
     <div className="app-shell">
@@ -35,6 +36,7 @@ export function AppShell() {
               <p className="page-description">{roleConfig.pageDescriptions[location.pathname]}</p>
             </div>
           </section>
+          {accessMessage ? <div className="empty-note">{accessMessage}</div> : null}
           <Page />
         </main>
       </div>

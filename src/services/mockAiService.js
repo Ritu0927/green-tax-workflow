@@ -1,3 +1,4 @@
+import { getDocumentAnalysisDefinition } from "../data/documentAnalysis";
 import { mockData } from "../data/mockData";
 
 function wait(value) {
@@ -14,162 +15,153 @@ function findReturn(returnId) {
   return mockData.returns.find((item) => item.id === returnId);
 }
 
-export async function analyzeDocument(documentId) {
-  const document = findDocument(documentId);
-
-  const fallback = {
-    documentId,
-    documentType: document?.type ?? "Unknown",
-    issuer: document?.label ?? "Unclassified document",
-    taxYear: Number(findReturn(document?.returnId)?.taxYear ?? 2025),
-    status: "analysis_complete",
-    extractedFields: []
-  };
-
-  if (documentId !== "doc-001") {
-    return wait(fallback);
-  }
-
-  return wait({
-    documentId: "doc-001",
-    documentType: "1099-INT",
-    issuer: "First Harbor Bank",
-    taxYear: 2025,
-    status: "analysis_complete",
-    extractedFields: [
-      {
-        name: "interestIncome",
-        label: "Interest income",
-        value: 1284.12,
-        sourceLocation: "Page 1 · Box 1",
-        confidence: 0.82
-      },
-      {
-        name: "accountEnding",
-        label: "Account ending",
-        value: "2184",
-        sourceLocation: "Page 1",
-        confidence: 0.96
-      }
-    ]
-  });
+function findClient(clientId) {
+  return mockData.clients.find((item) => item.id === clientId);
 }
 
-export async function compareDocumentToReturn(documentId, returnId) {
-  const analysis = await analyzeDocument(documentId);
+function findAlertDefinition(alertId) {
+  const matchingDocument = mockData.documents.find((document) => {
+    const definition = getDocumentAnalysisDefinition(document.id);
+    return definition?.alerts?.some((alert) => alert.id === alertId);
+  });
+
+  if (!matchingDocument) {
+    return null;
+  }
+
+  const definition = getDocumentAnalysisDefinition(matchingDocument.id);
+  const alert = definition?.alerts?.find((item) => item.id === alertId);
+
+  if (!alert) {
+    return null;
+  }
+
+  return {
+    document: matchingDocument,
+    client: findClient(matchingDocument.clientId),
+    targetReturn: findReturn(matchingDocument.returnId),
+    definition,
+    alert
+  };
+}
+
+function buildRequestTitle(alert, document) {
+  if (document.documentType === "1099-INT") {
+    return "Upload final 1099-INT";
+  }
+  if (alert.relatedField === "Provider tax ID") {
+    return "Provide dependent-care provider tax ID";
+  }
+  return `Provide information for ${document.label}`;
+}
+
+function buildRequestMessage(alert, document) {
+  if (document.documentType === "1099-INT") {
+    return "Please upload the final 2025 1099-INT from First Harbor Bank so we can complete your interest-income review.";
+  }
+  if (alert.relatedField === "Provider tax ID") {
+    return "Please provide the dependent-care provider tax ID so we can complete your dependent-care review.";
+  }
+  return `Please provide the missing information for ${document.label} so we can continue review.`;
+}
+
+function buildComparison(documentId, returnId, definition) {
   const targetReturn = findReturn(returnId);
   const fieldGroup = mockData.returnFieldGroups[returnId]?.flatMap((group) => group.fields) ?? [];
-  const interestField = fieldGroup.find((field) => field.sourceDocumentId === documentId);
-  const extractedInterest = analysis.extractedFields.find((field) => field.name === "interestIncome");
-  const roundedExtracted = extractedInterest ? `$${Math.round(extractedInterest.value).toLocaleString("en-US")}` : null;
-  const returnValue = interestField?.value ?? "Pending";
+  const extractedPrimary = definition?.extractedFields?.[0];
+  const reviewChecks = (definition?.alerts ?? []).map((alert) => ({
+    type: alert.id,
+    label: alert.title,
+    outcome: alert.suggestedAction,
+    confidence: 0.84
+  }));
 
-  const reviewChecks = [];
-
-  if (extractedInterest && interestField && roundedExtracted !== returnValue) {
+  if (targetReturn && definition && targetReturn.taxYear !== String(definition.taxYear)) {
     reviewChecks.push({
-      type: "value_mismatch",
-      label: "Value mismatch",
-      outcome: "Review the return value.",
-      confidence: extractedInterest.confidence
-    });
-  }
-
-  if (extractedInterest && extractedInterest.confidence < 0.85) {
-    reviewChecks.push({
-      type: "low_confidence",
-      label: "Low confidence",
-      outcome: "Verify the field against the source document.",
-      confidence: extractedInterest.confidence
-    });
-  }
-
-  if (targetReturn && Number(targetReturn.taxYear) !== analysis.taxYear) {
-    reviewChecks.push({
-      type: "tax_year_mismatch",
+      type: "tax-year-mismatch",
       label: "Tax-year mismatch",
       outcome: "Confirm whether the document belongs to another tax year.",
       confidence: 0.88
     });
   }
 
-  const duplicateMatch = mockData.documents.find(
-    (item) =>
-      item.id !== documentId &&
-      item.type === analysis.documentType &&
-      item.clientId === document?.clientId &&
-      item.label.includes("First Harbor Bank")
-  );
+  const linkedField = fieldGroup.find((field) => field.sourceDocumentId === documentId);
 
-  if (duplicateMatch) {
-    reviewChecks.push({
-      type: "duplicate_document",
-      label: "Possible duplicate upload",
-      outcome: "Review for possible duplicate upload.",
-      confidence: 0.79
-    });
-  }
-
-  return wait({
+  return {
     documentId,
     returnId,
     comparisonStatus: "complete",
-    extractedValue: extractedInterest?.value ?? null,
-    returnValue,
-    roundedExtractedValue: roundedExtracted,
+    extractedValue: extractedPrimary?.value ?? null,
+    returnValue: linkedField?.value ?? "Pending",
+    roundedExtractedValue: extractedPrimary?.value ?? null,
     reviewChecks
-  });
+  };
+}
+
+function buildAnalysis(documentId) {
+  const document = findDocument(documentId);
+  const definition = getDocumentAnalysisDefinition(documentId);
+
+  if (!document || !definition) {
+    return {
+      documentId,
+      documentType: document?.documentType ?? document?.type ?? "Unknown",
+      issuer: document?.label ?? "Unclassified document",
+      taxYear: Number(findReturn(document?.returnId)?.taxYear ?? 2025),
+      status: "analysis_complete",
+      extractedFields: [],
+      insights: [],
+      comparison: {
+        documentId,
+        returnId: document?.returnId ?? null,
+        comparisonStatus: "complete",
+        reviewChecks: []
+      },
+      analyzedAt: "2026-07-24 10:18 AM"
+    };
+  }
+
+  return {
+    documentId,
+    documentType: definition.documentType,
+    issuer: definition.issuer,
+    taxYear: definition.taxYear,
+    status: "analysis_complete",
+    extractedFields: definition.extractedFields,
+    insights: definition.alerts,
+    comparison: buildComparison(documentId, document.returnId, definition),
+    analyzedAt: "2026-07-24 10:18 AM"
+  };
+}
+
+export async function analyzeDocument(documentId) {
+  return wait(buildAnalysis(documentId));
+}
+
+export async function reanalyzeDocument(documentId) {
+  return wait(buildAnalysis(documentId));
+}
+
+export async function analyzeDocuments(documentIds) {
+  const results = [];
+  for (const documentId of documentIds) {
+    // Sequential processing preserves believable per-document progress in the UI.
+    // eslint-disable-next-line no-await-in-loop
+    results.push(await analyzeDocument(documentId));
+  }
+  return results;
+}
+
+export async function compareDocumentToReturn(documentId, returnId) {
+  const definition = getDocumentAnalysisDefinition(documentId);
+  return wait(buildComparison(documentId, returnId, definition));
 }
 
 export async function getInsightsForReturn(returnId) {
-  const baseInsights = mockData.aiInsights.filter((item) => item.returnId === returnId);
-
-  if (returnId !== "ret-2026-001") {
-    return wait(baseInsights);
-  }
-
-  return wait([
-    {
-      id: "analysis-insight-doc-001-low-confidence",
-      type: "low_confidence",
-      title: "Interest income should be verified",
-      reason: "The extracted interest-income field is below the mock confidence threshold.",
-      sourceDocumentId: "doc-001",
-      relatedReturnSection: "Income",
-      confidence: 0.82,
-      severity: "medium",
-      status: "awaiting_review",
-      reviewStatus: "Human review required",
-      recommendedAction: "Verify the field against the source document",
-      recommendation: "Verify the rounded interest amount against the uploaded 1099-INT before reviewer signoff.",
-      evidence: "Interest income was extracted from Page 1 · Box 1 with 82% confidence.",
-      rationale: "The rounded return value matches the source amount, but the extraction confidence is below the mock 85% verification threshold.",
-      actionType: "verify-field",
-      actionable: true,
-      fieldId: "field-001",
-      origin: "mock-analysis"
-    },
-    ...baseInsights
-  ]);
+  return wait(mockData.aiInsights.filter((item) => item.returnId === returnId));
 }
 
 export async function createTaskFromInsight(insightId) {
-  if (insightId === "analysis-insight-doc-001-low-confidence") {
-    return wait({
-      task: {
-        id: "generated-task-doc-001-review",
-        title: "Verify First Harbor Bank interest income",
-        clientId: "client-001",
-        owner: "Noah Patel",
-        dueDate: "2026-07-29",
-        status: "Review",
-        linkedTo: "doc-001",
-        visibility: "Internal",
-        type: "AI Review"
-      }
-    });
-  }
-
   if (insightId === "ai-001") {
     return wait({
       task: {
@@ -197,3 +189,61 @@ export async function createTaskFromInsight(insightId) {
 
   return wait(null);
 }
+
+export async function createInformationRequestDraft(alertId, actorName = "Noah Patel") {
+  const match = findAlertDefinition(alertId);
+  if (!match) {
+    return wait(null);
+  }
+
+  const { alert, document, client, targetReturn } = match;
+  return wait({
+    id: `draft-${alertId}`,
+    sourceAlertId: alert.id,
+    sourceDocumentId: document.id,
+    clientId: client?.id ?? null,
+    returnId: targetReturn?.id ?? null,
+    relatedReturnSection: document.relatedSection,
+    title: buildRequestTitle(alert, document),
+    message: buildRequestMessage(alert, document),
+    owner: client?.name ?? "Client",
+    dueDate: client?.deadline ?? targetReturn?.dueDate ?? "2026-08-01",
+    status: "Draft",
+    createdBy: actorName,
+    createdAt: "2026-07-24 4:24 PM"
+  });
+}
+
+export async function generateTaskFromAlert(alertId, kind = "reviewer-escalation", actorName = "Noah Patel") {
+  const match = findAlertDefinition(alertId);
+  if (!match) {
+    return wait(null);
+  }
+
+  const { alert, document, client, targetReturn } = match;
+  const title = kind === "reviewer-escalation"
+    ? `Review escalated document issue: ${alert.title}`
+    : `Review corrected extraction: ${alert.relatedField}`;
+  const owner = kind === "reviewer-escalation" ? "Maya Chen, CPA" : "Maya Chen, CPA";
+
+  return wait({
+    id: `generated-task-${kind}-${alert.id}`,
+    title,
+    description: alert.suggestedAction,
+    sourceAlertId: alert.id,
+    sourceDocumentId: document.id,
+    clientId: client?.id ?? null,
+    owner,
+    dueDate: targetReturn?.dueDate ?? "2026-08-01",
+    status: "Not Started",
+    linkedTo: document.id,
+    visibility: "Internal",
+    type: kind === "reviewer-escalation" ? "Escalation Review" : "Correction Review",
+    relatedReturnSection: document.relatedSection,
+    clientMessage: null,
+    createdBy: actorName,
+    createdAt: "2026-07-24 4:24 PM"
+  });
+}
+
+export const createTaskFromAlert = generateTaskFromAlert;
